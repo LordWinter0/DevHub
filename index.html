@@ -10,6 +10,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Favicon (to fix 404 error) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -17,77 +19,156 @@
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase global variables will be initialized here by the platform
-        window.firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        window.firebaseConfig = {}; // Initialize as empty object
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                // Attempt to parse if __firebase_config is defined and not empty
+                window.firebaseConfig = JSON.parse(__firebase_config);
+            }
+        } catch (e) {
+            console.error("Error parsing __firebase_config:", e);
+            // Error will be handled by the projectId check below via showMessageBox
+        }
+
         window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Initialize Firebase
-        window.firebaseApp = initializeApp(window.firebaseConfig);
-        window.db = getFirestore(window.firebaseApp);
-        window.auth = getAuth(window.firebaseApp);
+        // Function to display messages (defined here to be available before DOMContentLoaded)
+        function showMessageBox(title, message, isConfirm = false, onConfirm = () => {}, onCancel = () => {}) {
+            const messageBox = document.getElementById('message-box');
+            const messageBoxContent = document.getElementById('message-box-content');
+            const messageBoxTitle = document.getElementById('message-box-title');
+            const messageBoxText = document.getElementById('message-box-text');
+            const messageBoxConfirmBtn = document.getElementById('message-box-confirm');
+            const messageBoxCancelBtn = document.getElementById('message-box-cancel');
 
-        // Sign in or handle auth state
-        async function authenticateUser() {
-            try {
-                if (window.initialAuthToken) {
-                    await signInWithCustomToken(window.auth, window.initialAuthToken);
-                } else {
-                    await signInAnonymously(window.auth);
-                }
-                console.log("Firebase authentication successful!");
-                const userId = window.auth.currentUser?.uid;
-                if (userId) {
-                    // Update the UI with the user ID after successful authentication
+            if (!messageBox || !messageBoxContent) {
+                console.error("Message box elements not found. Cannot display message.");
+                alert(`${title}: ${message}`); // Fallback to browser alert if UI not ready
+                return;
+            }
+
+            messageBoxTitle.textContent = title;
+            messageBoxText.textContent = message;
+
+            messageBoxCancelBtn.classList.toggle('hidden', !isConfirm);
+
+            // Clear previous event listeners
+            messageBoxConfirmBtn.onclick = null;
+            messageBoxCancelBtn.onclick = null;
+
+            messageBoxConfirmBtn.onclick = () => {
+                messageBoxContent.classList.remove('modal-enter-to');
+                messageBoxContent.classList.add('modal-leave-to');
+                messageBoxContent.addEventListener('transitionend', function handler() {
+                    messageBox.classList.add('hidden');
+                    messageBoxContent.classList.remove('modal-leave-to');
+                    messageBoxContent.classList.add('modal-enter-from');
+                    messageBoxContent.removeEventListener('transitionend', handler);
+                    onConfirm();
+                }, { once: true });
+            };
+
+            if (isConfirm) {
+                messageBoxCancelBtn.onclick = () => {
+                    messageBoxContent.classList.remove('modal-enter-to');
+                    messageBoxContent.classList.add('modal-leave-to');
+                    messageBoxContent.addEventListener('transitionend', function handler() {
+                        messageBox.classList.add('hidden');
+                        messageBoxContent.classList.remove('modal-leave-to');
+                        messageBoxContent.classList.add('modal-enter-from');
+                        messageBoxContent.removeEventListener('transitionend', handler);
+                        onCancel();
+                    }, { once: true });
+                };
+            }
+
+            messageBox.classList.remove('hidden');
+            messageBoxContent.offsetWidth; // Trigger reflow
+            messageBoxContent.classList.remove('modal-enter-from');
+            messageBoxContent.classList.add('modal-enter-to');
+        }
+
+
+        // Initialize Firebase only if projectId is present
+        if (window.firebaseConfig && window.firebaseConfig.projectId) {
+            window.firebaseApp = initializeApp(window.firebaseConfig);
+            window.db = getFirestore(window.firebaseApp);
+            window.auth = getAuth(window.firebaseApp);
+
+            // Call authentication when the window loads
+            window.addEventListener('load', authenticateUser);
+
+            // Listen for auth state changes to ensure `window.auth.currentUser` is always up-to-date
+            onAuthStateChanged(window.auth, (user) => {
+                if (user) {
+                    console.log("Auth state changed, user is signed in:", user.uid);
                     const userIdDisplay = document.getElementById('user-id-display');
                     if (userIdDisplay) {
-                        userIdDisplay.textContent = `User ID: ${userId}`;
+                        userIdDisplay.textContent = `User ID: ${user.uid}`;
                         userIdDisplay.classList.remove('hidden');
                     }
-                    // This flag can be used by JavaScript later to ensure Firestore operations
-                    // only occur after authentication is ready.
-                    window.isAuthReady = true;
+                } else {
+                    console.log("Auth state changed, user is signed out.");
+                    const userIdDisplay = document.getElementById('user-id-display');
+                    if (userIdDisplay) {
+                        userIdDisplay.classList.add('hidden');
+                    }
                 }
-            } catch (error) {
-                console.error("Firebase authentication error:", error);
-                // Fallback to anonymous sign-in if custom token fails or is not provided
+            });
+
+            async function authenticateUser() {
                 try {
-                    await signInAnonymously(window.auth);
+                    if (window.initialAuthToken) {
+                        await signInWithCustomToken(window.auth, window.initialAuthToken);
+                    } else {
+                        await signInAnonymously(window.auth);
+                    }
+                    console.log("Firebase authentication successful!");
                     const userId = window.auth.currentUser?.uid;
                     if (userId) {
                         const userIdDisplay = document.getElementById('user-id-display');
                         if (userIdDisplay) {
-                            userIdDisplay.textContent = `User ID (Anon): ${userId}`;
+                            userIdDisplay.textContent = `User ID: ${userId}`;
                             userIdDisplay.classList.remove('hidden');
                         }
                         window.isAuthReady = true;
                     }
-                    console.log("Signed in anonymously due to custom token issue or absence.");
-                } catch (anonError) {
-                    console.error("Anonymous sign-in also failed:", anonError);
+                } catch (error) {
+                    console.error("Firebase authentication error:", error);
+                    try {
+                        await signInAnonymously(window.auth);
+                        const userId = window.auth.currentUser?.uid;
+                        if (userId) {
+                            const userIdDisplay = document.getElementById('user-id-display');
+                            if (userIdDisplay) {
+                                userIdDisplay.textContent = `User ID (Anon): ${userId}`;
+                                userIdDisplay.classList.remove('hidden');
+                            }
+                            window.isAuthReady = true;
+                        }
+                        console.log("Signed in anonymously due to custom token issue or absence.");
+                    } catch (anonError) {
+                        console.error("Anonymous sign-in also failed:", anonError);
+                        // Final fallback for critical auth failure
+                        showMessageBox("Authentication Failed", "Could not connect to DevHub. Please check your internet connection or try again later.", false);
+                    }
                 }
             }
+
+
+        } else {
+            console.error("Firebase 'projectId' is missing in the configuration.");
+            // Defer showing message box until DOM is ready to ensure it works
+            document.addEventListener('DOMContentLoaded', () => {
+                showMessageBox(
+                    "Configuration Error",
+                    "Firebase 'projectId' is missing. Please ensure your environment variable `__firebase_config` is correctly set and includes your Firebase project configuration (e.g., 'projectId', 'apiKey').",
+                    false,
+                    () => {} // No action on OK
+                );
+            });
         }
-
-        // Call authentication when the window loads
-        window.addEventListener('load', authenticateUser);
-
-        // Listen for auth state changes to ensure `window.auth.currentUser` is always up-to-date
-        onAuthStateChanged(window.auth, (user) => {
-            if (user) {
-                console.log("Auth state changed, user is signed in:", user.uid);
-                const userIdDisplay = document.getElementById('user-id-display');
-                if (userIdDisplay) {
-                    userIdDisplay.textContent = `User ID: ${user.uid}`;
-                    userIdDisplay.classList.remove('hidden');
-                }
-            } else {
-                console.log("Auth state changed, user is signed out.");
-                const userIdDisplay = document.getElementById('user-id-display');
-                if (userIdDisplay) {
-                    userIdDisplay.classList.add('hidden');
-                }
-            }
-        });
     </script>
     <style>
         body {
