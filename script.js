@@ -31,13 +31,25 @@ const cancelCreateProjectBtn = document.getElementById('cancel-create-project');
 const createProjectForm = document.getElementById('create-project-form');
 const projectListDiv = document.getElementById('project-list'); // Div to display project cards
 
-// Add Task Modal elements
-const addTaskModal = document.getElementById('add-task-modal');
-const addTaskModalContent = document.getElementById('add-task-modal-content');
+// Add/Edit Task Modal elements (repurposed for both adding and editing)
+const taskModal = document.getElementById('add-task-modal'); // Renamed from addTaskModal
+const taskModalContent = document.getElementById('add-task-modal-content'); // Renamed from addTaskModalContent
 const addTaskBtn = document.getElementById('add-task-btn');
-const cancelAddTaskBtn = document.getElementById('cancel-add-task');
-const addTaskForm = document.getElementById('add-task-form');
+const cancelTaskBtn = document.getElementById('cancel-add-task'); // Renamed from cancelAddTaskBtn
+const taskForm = document.getElementById('add-task-form'); // Renamed from addTaskForm
 const tasksTableBody = document.getElementById('tasks-table-body');
+const taskModalTitle = taskModal.querySelector('h2'); // To dynamically change modal title
+let isEditingTask = false; // Flag to determine if modal is for edit or add
+let currentEditingTaskId = null; // Stores ID of task being edited
+
+// Task form specific fields (to populate for editing)
+const taskNameInput = document.getElementById('task-name');
+const taskDescriptionInput = document.getElementById('task-description');
+const taskStatusSelect = document.getElementById('task-status');
+const taskPrioritySelect = document.getElementById('task-priority');
+const taskAssigneeInput = document.getElementById('task-assignee');
+const taskDueDateInput = document.getElementById('task-due-date');
+const taskRoleSelect = document.getElementById('task-role'); // New field for role
 
 // Invite Team Member Modal elements
 const inviteTeamModal = document.getElementById('invite-team-modal');
@@ -62,7 +74,7 @@ const currentProjectNameTasks = document.getElementById('current-project-name-ta
 const currentProjectNameBudget = document.getElementById('current-project-name-budget');
 const currentProjectNameTeam = document.getElementById('current-project-name-team');
 const currentProjectNameAnalytics = document.getElementById('current-project-name-analytics');
-const currentProjectNameMarketing = document.getElementById('current-project-name-marketing');
+const currentProjectNameMarketing = document.getElementById('project-marketing-view'); // Fixed typo
 const currentProjectNameCommunity = document.getElementById('current-project-name-community');
 const projectDescriptionDisplay = document.getElementById('project-description-display');
 const projectPlatformDisplay = document.getElementById('project-platform-display');
@@ -77,6 +89,26 @@ const budgetPercentageSpan = document.getElementById('budget-percentage');
 const budgetProgressBar = document.getElementById('budget-progress-bar');
 const budgetCategoriesContainer = document.getElementById('budget-categories-container');
 const addBudgetCategoryBtn = document.getElementById('add-budget-category-btn');
+const currencySymbolSelect = document.getElementById('currency-symbol'); // New: Currency selection
+
+// Budget Transaction Elements (NEW)
+const addTransactionBtn = document.getElementById('add-transaction-btn');
+const transactionsTableBody = document.getElementById('transactions-table-body');
+const transactionModal = document.getElementById('transaction-modal');
+const transactionModalContent = document.getElementById('transaction-modal-content');
+const cancelTransactionBtn = document.getElementById('cancel-transaction');
+const transactionForm = document.getElementById('transaction-form');
+const transactionModalTitle = transactionModal.querySelector('h2');
+let isEditingTransaction = false;
+let currentEditingTransactionId = null;
+
+const transactionDescriptionInput = document.getElementById('transaction-description');
+const transactionAmountInput = document.getElementById('transaction-amount');
+const transactionDateInput = document.getElementById('transaction-date');
+const transactionCategorySelect = document.getElementById('transaction-category');
+const transactionTypeExpenseRadio = document.getElementById('transaction-type-expense');
+const transactionTypeIncomeRadio = document.getElementById('transaction-type-income');
+
 
 // --- Utility Functions ---
 
@@ -337,7 +369,7 @@ async function loadProjectTasks(projectId) {
         if (snapshot.empty) {
             tasksTableBody.innerHTML = `
                 <tr class="bg-gray-800 bg-opacity-50">
-                    <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-blue-400 text-center">No tasks added yet.</td>
+                    <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-blue-400 text-center">No tasks added yet.</td>
                 </tr>
             `;
             return;
@@ -353,18 +385,35 @@ async function loadProjectTasks(projectId) {
                 row.classList.add('bg-gray-700', 'bg-opacity-60');
             }
 
+            // Determine status badge colors
+            let statusColorClass = '';
+            switch (task.status) {
+                case 'To Do':
+                    statusColorClass = 'bg-blue-100 text-blue-800';
+                    break;
+                case 'In Progress':
+                    statusColorClass = 'bg-yellow-100 text-yellow-800';
+                    break;
+                case 'Reviewing': // New status
+                    statusColorClass = 'bg-purple-100 text-purple-800';
+                    break;
+                case 'Completed': // Renamed from 'Done'
+                    statusColorClass = 'bg-green-100 text-green-800';
+                    break;
+                default:
+                    statusColorClass = 'bg-gray-100 text-gray-800';
+            }
+
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${task.name || 'N/A'}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                        ${task.status === 'To Do' ? 'bg-blue-100 text-blue-800' : ''}
-                        ${task.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' : ''}
-                        ${task.status === 'Blocked' ? 'bg-red-100 text-red-800' : ''}
-                        ${task.status === 'Done' ? 'bg-green-100 text-green-800' : ''}
-                    ">${task.status || 'N/A'}</span>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColorClass}">
+                        ${task.status || 'N/A'}
+                    </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-300">${task.priority || 'N/A'}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-300">${task.assignee || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-300">${task.role || 'N/A'}</td> <!-- New Role column -->
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-300">${task.dueDate || 'N/A'}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-300">${task.progress || '0%'}</td>
                 <td class="px-6 py-4 whitespace-normal text-sm text-blue-300 max-w-xs overflow-hidden text-ellipsis">${task.description || 'No notes.'}</td>
@@ -400,10 +449,10 @@ async function loadProjectTasks(projectId) {
 
 
 /**
- * Handles adding a new task to the current project.
+ * Handles adding or updating a task to the current project.
  * @param {Event} event - The form submission event.
  */
-async function handleAddTask(event) {
+async function handleTaskFormSubmission(event) {
     event.preventDefault();
 
     if (!currentProjectId) {
@@ -415,46 +464,77 @@ async function handleAddTask(event) {
         return;
     }
 
-    const taskName = document.getElementById('task-name').value.trim();
-    const taskDescription = document.getElementById('task-description').value.trim();
-    const taskStatus = document.getElementById('task-status').value;
-    const taskPriority = document.getElementById('task-priority').value;
-    const taskAssignee = document.getElementById('task-assignee').value.trim();
-    const taskDueDate = document.getElementById('task-due-date').value;
+    const taskData = {
+        name: taskNameInput.value.trim(),
+        description: taskDescriptionInput.value.trim(),
+        status: taskStatusSelect.value,
+        priority: taskPrioritySelect.value,
+        assignee: taskAssigneeInput.value.trim(),
+        dueDate: taskDueDateInput.value,
+        role: taskRoleSelect.value // New role field
+    };
 
-    if (!taskName) {
+    if (!taskData.name) {
         showMessageBox("Validation Error", "Task Name is required.");
         return;
     }
 
     try {
         const tasksCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/projects/${currentProjectId}/tasks`);
-        await addDoc(tasksCollectionRef, {
-            name: taskName,
-            description: taskDescription,
-            status: taskStatus,
-            priority: taskPriority,
-            assignee: taskAssignee,
-            dueDate: taskDueDate,
-            progress: '0%', // Default progress
-            createdAt: new Date().toISOString()
-        });
-        showMessageBox("Success", "Task added successfully!");
-        addTaskForm.reset();
-        hideModal(addTaskModal, addTaskModalContent);
+        if (isEditingTask && currentEditingTaskId) {
+            // Update existing task
+            const taskDocRef = doc(tasksCollectionRef, currentEditingTaskId);
+            await updateDoc(taskDocRef, taskData);
+            showMessageBox("Success", "Task updated successfully!");
+        } else {
+            // Add new task
+            taskData.progress = '0%'; // Default progress for new tasks
+            taskData.createdAt = new Date().toISOString();
+            await addDoc(tasksCollectionRef, taskData);
+            showMessageBox("Success", "Task added successfully!");
+        }
+        taskForm.reset();
+        hideModal(taskModal, taskModalContent);
     } catch (error) {
-        console.error("Error adding task:", error);
-        showMessageBox("Error", "Failed to add task: " + error.message);
+        console.error("Error saving task:", error);
+        showMessageBox("Error", "Failed to save task: " + error.message);
     }
 }
 
 /**
- * Placeholder for editing a task. Will implement a modal later.
+ * Populates the task modal for editing a task.
  * @param {string} taskId - The ID of the task to edit.
  */
-function editTask(taskId) {
-    showMessageBox("Edit Task", `Feature to edit task ID: ${taskId} coming soon!`);
-    // Future implementation: fetch task data, populate a modal form, update doc
+async function editTask(taskId) {
+    if (!db || !currentUserId || !currentProjectId) {
+        showMessageBox("Error", "System not ready for editing tasks. Please try again.");
+        return;
+    }
+
+    const taskDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/projects/${currentProjectId}/tasks`, taskId);
+    try {
+        const taskSnap = await getDoc(taskDocRef);
+        if (taskSnap.exists()) {
+            const task = taskSnap.data();
+            taskModalTitle.textContent = "Edit Task";
+            taskNameInput.value = task.name || '';
+            taskDescriptionInput.value = task.description || '';
+            taskStatusSelect.value = task.status || 'To Do';
+            taskPrioritySelect.value = task.priority || 'Low';
+            taskAssigneeInput.value = task.assignee || '';
+            taskDueDateInput.value = task.dueDate || '';
+            taskRoleSelect.value = task.role || 'Programmer'; // Populate new role field
+
+            isEditingTask = true;
+            currentEditingTaskId = taskId;
+            showModal(taskModal, taskModalContent);
+        } else {
+            showMessageBox("Error", "Task not found for editing.");
+        }
+    } catch (error) {
+        console.error("Error fetching task for edit:", error);
+        showMessageBox("Error", "Failed to load task for editing: " + error.message);
+    }
 }
 
 /**
@@ -489,42 +569,91 @@ function deleteTask(taskId) {
 // --- Budget Management Functions ---
 
 /**
- * Loads and manages budget data for the selected project.
+ * Loads and manages budget data for the selected project, including currency and transactions.
  * @param {string} projectId - The ID of the current project.
  */
 async function loadProjectBudget(projectId) {
-    if (!db || !currentUserId || !projectId) return;
+    if (!db || !currentUserId || !projectId) {
+        console.warn("Firestore not initialized or user not authenticated yet. Cannot load budget.");
+        return;
+    }
 
-    const budgetDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/projects/${projectId}/budget`, 'main_budget'); // Assuming one budget doc per project
+    const budgetDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/projects/${projectId}/budget`, 'main_budget');
+    const transactionsCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/projects/${projectId}/budget/transactions`);
 
-    const unsubscribe = onSnapshot(budgetDocRef, (docSnap) => {
-        let budgetData = { total: 0, spent: 0, categories: [] };
+    // Listen for main budget document changes
+    const unsubscribeBudget = onSnapshot(budgetDocRef, (docSnap) => {
+        let budgetData = { total: 0, currencySymbol: '$', categories: [] };
         if (docSnap.exists()) {
             budgetData = docSnap.data();
             budgetData.categories = budgetData.categories || []; // Ensure categories is an array
-            console.log("Budget data loaded:", budgetData);
+            budgetData.currencySymbol = budgetData.currencySymbol || '$'; // Default currency
+            console.log("Main Budget data loaded:", budgetData);
         } else {
             console.log("No budget document found, creating default.");
-            // If no budget doc, initialize with defaults
             setDoc(budgetDocRef, budgetData, { merge: true }).catch(e => console.error("Error creating default budget:", e));
         }
 
         totalBudgetInput.value = budgetData.total || 0;
-        budgetSpentInput.value = budgetData.spent || 0;
-        renderBudgetCategories(budgetData.categories);
-        updateBudgetProgress();
+        currencySymbolSelect.value = budgetData.currencySymbol;
+        renderBudgetCategories(budgetData.categories); // Render categories based on allocations
+        populateTransactionCategories(budgetData.categories); // Populate categories in transaction modal
 
         // Add event listener to total budget input only once
         if (!totalBudgetInput.dataset.listenerAttached) {
             totalBudgetInput.addEventListener('change', saveBudgetTotal);
             totalBudgetInput.dataset.listenerAttached = 'true';
         }
+        // Add event listener for currency selection
+        if (!currencySymbolSelect.dataset.listenerAttached) {
+            currencySymbolSelect.addEventListener('change', saveCurrencySymbol);
+            currencySymbolSelect.dataset.listenerAttached = 'true';
+        }
+
+        // Update progress after rendering categories, before transactions are summed
+        updateBudgetProgress();
 
     }, (error) => {
-        console.error("Error loading budget:", error);
-        showMessageBox("Error", "Failed to load budget data.");
+        console.error("Error loading main budget:", error);
+        showMessageBox("Error", "Failed to load main budget data.");
     });
-    unsubscribeProjectListeners.push(unsubscribe); // Store unsubscribe function
+    unsubscribeProjectListeners.push(unsubscribeBudget); // Store unsubscribe function
+
+    // Listen for transactions subcollection changes
+    const unsubscribeTransactions = onSnapshot(transactionsCollectionRef, (snapshot) => {
+        let totalSpentFromTransactions = 0;
+        let totalIncomeFromTransactions = 0;
+        const transactions = [];
+
+        if (!snapshot.empty) {
+            snapshot.forEach(doc => {
+                const transaction = { id: doc.id, ...doc.data() };
+                transactions.push(transaction);
+                if (transaction.type === 'expense') {
+                    totalSpentFromTransactions += parseFloat(transaction.amount) || 0;
+                } else if (transaction.type === 'income') {
+                    totalIncomeFromTransactions += parseFloat(transaction.amount) || 0;
+                }
+            });
+            console.log("Transactions loaded:", transactions);
+        } else {
+            console.log("No transactions found.");
+        }
+
+        // Update budget spent based on transactions, not category allocations
+        // Net spent = total expenses - total income (if considering income against budget)
+        // For simplicity, let's just track expenses against the total budget for now.
+        // If income contributes to the 'total budget', that's a different model.
+        // Sticking to expenses tracked against a fixed 'total estimated budget'.
+        budgetSpentInput.value = totalSpentFromTransactions;
+        renderTransactions(transactions, currencySymbolSelect.value); // Render transactions
+        updateBudgetProgress(); // Recalculate progress after transactions are summed
+
+    }, (error) => {
+        console.error("Error loading transactions:", error);
+        showMessageBox("Error", "Failed to load budget transactions.");
+    });
+    unsubscribeProjectListeners.push(unsubscribeTransactions); // Store unsubscribe function
 }
 
 
@@ -572,7 +701,9 @@ function addBudgetCategroyToUI(category = { name: '', amount: 0 }) {
 
     nameInput.addEventListener('change', saveBudgetCategories);
     amountInput.addEventListener('change', saveBudgetCategories);
-    amountInput.addEventListener('input', updateBudgetProgress); // Update progress instantly on input
+    // Note: amountInput.addEventListener('input', updateBudgetProgress) removed
+    // because category amounts are now allocations, not directly "spent"
+    // Spent comes from transactions.
 
     deleteBtn.addEventListener('click', (e) => {
         showMessageBox(
@@ -604,7 +735,25 @@ async function saveBudgetTotal() {
 }
 
 /**
- * Saves all budget categories to Firestore.
+ * Saves the selected currency symbol to Firestore.
+ */
+async function saveCurrencySymbol() {
+    if (!currentProjectId || !db || !currentUserId) return;
+    const budgetDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/projects/${currentProjectId}/budget`, 'main_budget');
+    try {
+        await setDoc(budgetDocRef, { currencySymbol: currencySymbolSelect.value }, { merge: true });
+        // Re-render transactions with new currency symbol if they exist
+        // The onSnapshot for transactions will trigger and re-render.
+        console.log("Currency symbol updated.");
+    } catch (error) {
+        console.error("Error saving currency symbol:", error);
+        showMessageBox("Error", "Failed to save currency symbol.");
+    }
+}
+
+
+/**
+ * Saves all budget categories (allocations) to Firestore.
  */
 async function saveBudgetCategories() {
     if (!currentProjectId || !db || !currentUserId) return;
@@ -614,15 +763,17 @@ async function saveBudgetCategories() {
     budgetCategoriesContainer.querySelectorAll('.flex.items-center.space-x-4').forEach(div => {
         const nameInput = div.querySelector('.budget-category-name');
         const amountInput = div.querySelector('.budget-category-amount');
-        categories.push({
-            name: nameInput.value.trim(),
-            amount: parseFloat(amountInput.value) || 0
-        });
+        if (nameInput.value.trim() !== '') { // Only save non-empty category names
+            categories.push({
+                name: nameInput.value.trim(),
+                amount: parseFloat(amountInput.value) || 0
+            });
+        }
     });
 
     try {
         await setDoc(budgetDocRef, { categories: categories }, { merge: true });
-        updateBudgetProgress();
+        populateTransactionCategories(categories); // Update transaction modal categories
         console.log("Budget categories updated.");
     } catch (error) {
         console.error("Error saving budget categories:", error);
@@ -632,17 +783,13 @@ async function saveBudgetCategories() {
 
 /**
  * Updates the budget spent amount and the progress bar.
+ * Note: budgetSpentInput.value is now updated by transaction listeners.
+ * This function primarily updates the UI for progress.
  */
 function updateBudgetProgress() {
-    const categoryAmounts = budgetCategoriesContainer.querySelectorAll('.budget-category-amount');
-    let totalSpent = 0;
-    categoryAmounts.forEach(input => {
-        totalSpent += parseFloat(input.value) || 0;
-    });
-
-    budgetSpentInput.value = totalSpent;
-
     const totalBudget = parseFloat(totalBudgetInput.value) || 0;
+    const totalSpent = parseFloat(budgetSpentInput.value) || 0; // Read from input, which is updated by transactions
+
     let percentage = 0;
     if (totalBudget > 0) {
         percentage = (totalSpent / totalBudget) * 100;
@@ -652,13 +799,193 @@ function updateBudgetProgress() {
     budgetPercentageSpan.textContent = `${percentage.toFixed(1)}%`;
     budgetProgressBar.style.width = `${percentage}%`;
 
-    // Optionally save the 'spent' amount back to Firestore
-    if (currentProjectId && db && currentUserId) {
-        const budgetDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/projects/${currentProjectId}/budget`, 'main_budget');
-        setDoc(budgetDocRef, { spent: totalSpent }, { merge: true }).catch(e => console.error("Error saving spent budget:", e));
+    // Optionally add a visual alert if over budget
+    if (totalSpent > totalBudget && totalBudget > 0) {
+        budgetProgressBar.classList.remove('bg-blue-500');
+        budgetProgressBar.classList.add('bg-red-500');
+        showMessageBox("Budget Alert", `You are ${currencySymbolSelect.value}${(totalSpent - totalBudget).toFixed(2)} over budget!`, false);
+    } else {
+        budgetProgressBar.classList.remove('bg-red-500');
+        budgetProgressBar.classList.add('bg-blue-500');
     }
 }
 
+// --- Transaction Management Functions (NEW) ---
+
+/**
+ * Renders budget transactions into the UI.
+ * @param {Array} transactions - An array of transaction objects.
+ * @param {string} currencySymbol - The symbol for the selected currency.
+ */
+function renderTransactions(transactions, currencySymbol = '$') {
+    transactionsTableBody.innerHTML = ''; // Clear existing transactions
+
+    if (transactions.length === 0) {
+        transactionsTableBody.innerHTML = `
+            <tr class="bg-gray-800 bg-opacity-50">
+                <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-blue-400 text-center">No transactions logged yet.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    transactions.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date, newest first
+
+    transactions.forEach(transaction => {
+        const row = transactionsTableBody.insertRow();
+        row.className = 'bg-gray-800 bg-opacity-50';
+        if (transactionsTableBody.rows.length % 2 === 0) {
+            row.classList.add('bg-gray-700', 'bg-opacity-60');
+        }
+
+        const amountColorClass = transaction.type === 'expense' ? 'text-red-400' : 'text-green-400';
+
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${transaction.description || 'N/A'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-300">${transaction.category || 'N/A'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm ${amountColorClass} font-semibold">${currencySymbol}${parseFloat(transaction.amount || 0).toFixed(2)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-300">${transaction.date || 'N/A'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-300 capitalize">${transaction.type || 'N/A'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button class="text-blue-400 hover:text-blue-600 mr-3 edit-transaction-btn" data-id="${transaction.id}">
+                    <i data-lucide="edit" class="w-5 h-5"></i>
+                </button>
+                <button class="text-red-500 hover:text-red-700 delete-transaction-btn" data-id="${transaction.id}">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+            </td>
+        `;
+        lucide.createIcons();
+    });
+
+    document.querySelectorAll('.edit-transaction-btn').forEach(button => {
+        button.addEventListener('click', (e) => editTransaction(e.currentTarget.dataset.id));
+    });
+    document.querySelectorAll('.delete-transaction-btn').forEach(button => {
+        button.addEventListener('click', (e) => deleteTransaction(e.currentTarget.dataset.id));
+    });
+}
+
+/**
+ * Populates the category select dropdown in the transaction modal.
+ * @param {Array} categories - An array of budget category objects.
+ */
+function populateTransactionCategories(categories) {
+    transactionCategorySelect.innerHTML = '<option value="">Select Category</option>'; // Default option
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.name;
+        option.textContent = category.name;
+        transactionCategorySelect.appendChild(option);
+    });
+    // Add an 'Other' option
+    const otherOption = document.createElement('option');
+    otherOption.value = 'Other';
+    otherOption.textContent = 'Other';
+    transactionCategorySelect.appendChild(otherOption);
+}
+
+/**
+ * Handles adding or updating a budget transaction.
+ * @param {Event} event - The form submission event.
+ */
+async function handleTransactionFormSubmission(event) {
+    event.preventDefault();
+
+    if (!currentProjectId || !db || !currentUserId) {
+        showMessageBox("Error", "System not ready. Please select a project and ensure authentication.");
+        return;
+    }
+
+    const transactionData = {
+        description: transactionDescriptionInput.value.trim(),
+        amount: parseFloat(transactionAmountInput.value) || 0,
+        date: transactionDateInput.value,
+        category: transactionCategorySelect.value,
+        type: transactionTypeExpenseRadio.checked ? 'expense' : 'income'
+    };
+
+    if (!transactionData.description || transactionData.amount <= 0 || !transactionData.date) {
+        showMessageBox("Validation Error", "Please fill in description, a positive amount, and date.");
+        return;
+    }
+
+    try {
+        const transactionsCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/projects/${currentProjectId}/budget/transactions`);
+        if (isEditingTransaction && currentEditingTransactionId) {
+            const transactionDocRef = doc(transactionsCollectionRef, currentEditingTransactionId);
+            await updateDoc(transactionDocRef, transactionData);
+            showMessageBox("Success", "Transaction updated successfully!");
+        } else {
+            transactionData.createdAt = new Date().toISOString();
+            await addDoc(transactionsCollectionRef, transactionData);
+            showMessageBox("Success", "Transaction added successfully!");
+        }
+        transactionForm.reset();
+        hideModal(transactionModal, transactionModalContent);
+    } catch (error) {
+        console.error("Error saving transaction:", error);
+        showMessageBox("Error", "Failed to save transaction: " + error.message);
+    }
+}
+
+/**
+ * Populates the transaction modal for editing.
+ * @param {string} transactionId - The ID of the transaction to edit.
+ */
+async function editTransaction(transactionId) {
+    if (!db || !currentUserId || !currentProjectId) return;
+
+    const transactionDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/projects/${currentProjectId}/budget/transactions`, transactionId);
+    try {
+        const transactionSnap = await getDoc(transactionDocRef);
+        if (transactionSnap.exists()) {
+            const transaction = transactionSnap.data();
+            transactionModalTitle.textContent = "Edit Transaction";
+            transactionDescriptionInput.value = transaction.description || '';
+            transactionAmountInput.value = transaction.amount || 0;
+            transactionDateInput.value = transaction.date || '';
+            transactionCategorySelect.value = transaction.category || '';
+            if (transaction.type === 'expense') {
+                transactionTypeExpenseRadio.checked = true;
+            } else {
+                transactionTypeIncomeRadio.checked = true;
+            }
+
+            isEditingTransaction = true;
+            currentEditingTransactionId = transactionId;
+            showModal(transactionModal, transactionModalContent);
+        } else {
+            showMessageBox("Error", "Transaction not found for editing.");
+        }
+    } catch (error) {
+        console.error("Error fetching transaction for edit:", error);
+        showMessageBox("Error", "Failed to load transaction for editing: " + error.message);
+    }
+}
+
+/**
+ * Handles deleting a transaction.
+ * @param {string} transactionId - The ID of the transaction to delete.
+ */
+function deleteTransaction(transactionId) {
+    showMessageBox(
+        "Confirm Deletion",
+        "Are you sure you want to delete this transaction? This action cannot be undone.",
+        true,
+        async () => {
+            if (!currentProjectId || !db || !currentUserId) return;
+            try {
+                const transactionDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/projects/${currentProjectId}/budget/transactions`, transactionId);
+                await deleteDoc(transactionDocRef);
+                showMessageBox("Success", "Transaction deleted successfully!");
+            } catch (error) {
+                console.error("Error deleting transaction:", error);
+                showMessageBox("Error", "Failed to delete transaction: " + error.message);
+            }
+        }
+    );
+}
 
 // --- Team Management Functions ---
 
@@ -751,7 +1078,8 @@ async function handleInviteTeamMember(event) {
         showMessageBox("Success", "Team member invited successfully!");
         inviteTeamForm.reset();
         hideModal(inviteTeamModal, inviteTeamModalContent);
-    } catch (error) {
+    }
+     catch (error) {
         console.error("Error inviting team member:", error);
         showMessageBox("Error", "Failed to invite team member: " + error.message);
     }
@@ -861,23 +1189,26 @@ projectNavButtons.forEach(button => {
     });
 });
 
-// Add Task Button
+// Add Task Button (opens modal for new task)
 addTaskBtn.addEventListener('click', () => {
     if (currentProjectId) {
-        addTaskForm.reset();
-        showModal(addTaskModal, addTaskModalContent);
+        taskModalTitle.textContent = "Add New Task";
+        taskForm.reset();
+        isEditingTask = false;
+        currentEditingTaskId = null;
+        showModal(taskModal, taskModalContent);
     } else {
         showMessageBox("Information", "Please select a project first to add tasks.");
     }
 });
 
-// Cancel Add Task Button
-cancelAddTaskBtn.addEventListener('click', () => {
-    hideModal(addTaskModal, addTaskModalContent);
+// Cancel Add/Edit Task Button
+cancelTaskBtn.addEventListener('click', () => {
+    hideModal(taskModal, taskModalContent);
 });
 
-// Add Task Form Submission
-addTaskForm.addEventListener('submit', handleAddTask);
+// Add/Edit Task Form Submission
+taskForm.addEventListener('submit', handleTaskFormSubmission);
 
 
 // Add Budget Category Button
@@ -885,6 +1216,28 @@ addBudgetCategoryBtn.addEventListener('click', () => {
     addBudgetCategroyToUI();
     saveBudgetCategories(); // Save the new empty category to Firestore
 });
+
+// Add Transaction Button (NEW)
+addTransactionBtn.addEventListener('click', () => {
+    if (currentProjectId) {
+        transactionModalTitle.textContent = "Log New Transaction";
+        transactionForm.reset();
+        transactionTypeExpenseRadio.checked = true; // Default to expense
+        isEditingTransaction = false;
+        currentEditingTransactionId = null;
+        showModal(transactionModal, transactionModalContent);
+    } else {
+        showMessageBox("Information", "Please select a project first to log transactions.");
+    }
+});
+
+// Cancel Transaction Modal (NEW)
+cancelTransactionBtn.addEventListener('click', () => {
+    hideModal(transactionModal, transactionModalModalContent);
+});
+
+// Transaction Form Submission (NEW)
+transactionForm.addEventListener('submit', handleTransactionFormSubmission);
 
 
 // Invite Team Member Button
@@ -910,4 +1263,3 @@ inviteTeamForm.addEventListener('submit', handleInviteTeamMember);
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
 });
-
