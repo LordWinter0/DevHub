@@ -1,28 +1,269 @@
-/* Custom styles go here. Tailwind CSS handles most of the styling. */
-/* You can add global styles or overrides if needed. */
+/* devhub.css */
 
+/* General Body Styles */
 body {
+    font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-family: 'Inter', sans-serif; /* Ensure Inter font is applied */
+    /* Background gradient already set in HTML, but here for completeness if externalized */
+    /* background: linear-gradient(to bottom right, #1a202c, #2d3748); */
+    color: #e2e8f0; /* Default text color for the app */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Optional: Add a subtle scrollbar style */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+/* Header Styles */
+header {
+    /* Styles already applied via Tailwind in HTML, ensuring consistency */
+    /* background-color: rgba(17, 24, 39, 0.7); */
+    /* backdrop-filter: blur(16px); */
+    /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); */
 }
 
-::-webkit-scrollbar-track {
-    background: #1f2937; /* Gray-800 */
-    border-radius: 10px;
+header h1 {
+    /* Gradient text already applied via Tailwind in HTML */
 }
 
-::-webkit-scrollbar-thumb {
-    background: #4b5563; /* Gray-600 */
-    border-radius: 10px;
+/* Navigation Links */
+header nav ul li a {
+    /* Styles already applied via Tailwind in HTML */
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #6b7280; /* Gray-500 */
+/* Main Content Area */
+main {
+    flex-grow: 1; /* Allows main content to take available space */
+    padding-top: 6rem; /* Adjust for fixed header */
+    padding-bottom: 2rem; /* Consistent spacing */
+}
+
+/* Sidebar Styles */
+#project-sidebar {
+    /* Styles already applied via Tailwind in HTML */
+    position: sticky; /* Makes sidebar stick on scroll */
+    top: 8rem; /* Offset from header */
+    align-self: flex-start; /* Ensures it aligns to the top of its grid cell */
+}
+
+#project-sidebar h2 {
+    /* Border bottom applied via Tailwind in HTML */
+}
+
+#project-sidebar nav ul li button {
+    /* Styles already applied via Tailwind in HTML */
+    transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+#project-sidebar nav ul li button:hover {
+    transform: translateX(5px); /* Subtle hover effect */
+}
+
+/* Content Area Styles */
+#content-area {
+    /* Styles already applied via Tailwind in HTML */
+}
+
+/* Dashboard & Project Section Styles (shared) */
+section {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+section.active-view {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Project Card Styles on Dashboard */
+#project-list > div {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+#project-list > div:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Form Element Styles (Inputs, Textareas, Selects) */
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="date"],
+textarea,
+select {
+    /* Styles already applied via Tailwind in HTML */
+    /* background-color: #4a5568; */
+    /* border: 1px solid #4299e1; */
+    /* color: #edf2f7; */
+    /* placeholder-color: #a0aec0; */
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: transparent; /* Remove default border on focus */
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); /* Custom blue ring on focus */
+}
+
+/* Buttons (General Styles) */
+button {
+    /* Gradients, padding, rounded corners already applied via Tailwind in HTML */
+    transition: all 0.3s ease-in-out;
+}
+
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Enhance shadow on hover */
+}
+
+/* Specific Button Adjustments */
+#show-create-project-modal,
+#add-task-btn,
+#invite-team-member-btn,
+#create-project-form button[type="submit"],
+#add-task-form button[type="submit"],
+#invite-team-form button[type="submit"],
+#message-box-confirm {
+    /* These have distinct blue/cyan gradients */
+}
+
+#cancel-create-project,
+#cancel-add-task,
+#cancel-invite-team,
+#message-box-cancel {
+    /* These are gray, ensure consistent hover effects */
+}
+
+
+/* Table Styles (for tasks) */
+table {
+    width: 100%; /* Ensure table takes full width of container */
+    border-collapse: separate; /* Allows rounded corners on table cells */
+    border-spacing: 0;
+}
+
+table thead th {
+    /* background-color: rgba(74, 85, 104, 0.8); */
+    text-align: left;
+    padding: 1rem 1.5rem;
+    font-size: 0.75rem; /* Smaller font for headers */
+    font-weight: bold;
+    color: #90cdf4; /* Lighter blue for headers */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #4a5568; /* Subtle separator */
+}
+
+table thead th:first-child {
+    border-top-left-radius: 1rem; /* Rounded corners for table header */
+}
+table thead th:last-child {
+    border-top-right-radius: 1rem; /* Rounded corners for table header */
+}
+
+
+table tbody tr {
+    background-color: rgba(30, 41, 59, 0.6); /* Slightly darker row background */
+    transition: background-color 0.2s ease-in-out;
+}
+
+table tbody tr:nth-child(odd) {
+    background-color: rgba(45, 55, 72, 0.6); /* Alternate row color for readability */
+}
+
+table tbody tr:hover {
+    background-color: rgba(66, 153, 225, 0.2); /* Highlight row on hover */
+}
+
+table tbody td {
+    padding: 1rem 1.5rem;
+    font-size: 0.95rem;
+    color: #cbd5e0; /* Default text color for table cells */
+    white-space: nowrap; /* Prevent text wrapping in cells by default */
+}
+
+/* Progress Bar (Budget) */
+#budget-progress-bar {
+    /* Background and width already handled by JS and Tailwind in HTML */
+}
+
+/* Modal Specific Styles */
+#create-project-modal,
+#add-task-modal,
+#invite-team-modal,
+#message-box {
+    animation: fadeIn 0.3s ease-out forwards; /* Fade in animation */
+}
+
+#create-project-modal.hidden,
+#add-task-modal.hidden,
+#invite-team-modal.hidden,
+#message-box.hidden {
+    animation: fadeOut 0.3s ease-out forwards; /* Fade out animation */
+    pointer-events: none; /* Disable interaction when hidden */
+}
+
+/* Modal Content Transition */
+#create-project-modal-content,
+#add-task-modal-content,
+#invite-team-modal-content,
+#message-box-content {
+    /* Initial state for transitions handled by .modal-enter-from in HTML */
+    transition: all 0.3s ease-in-out;
+}
+
+/* Animations for modal entry/exit */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+    .lg\:grid-cols-4 {
+        grid-template-columns: 1fr; /* Stack sidebar and content on smaller screens */
+    }
+    #project-sidebar {
+        position: static; /* Remove sticky behavior on small screens */
+        top: auto;
+        align-self: auto;
+        margin-bottom: 2rem; /* Add space below sidebar when stacked */
+    }
+    main {
+        padding: 1rem; /* Reduce padding on smaller screens */
+        padding-top: 5rem; /* Adjust for header on mobile */
+    }
+    header {
+        padding: 1rem;
+    }
+    header h1 {
+        font-size: 2.5rem; /* Slightly smaller title on mobile */
+    }
+    header nav ul {
+        flex-direction: column; /* Stack nav links vertically on mobile */
+        display: none; /* Hide nav links initially, can add a toggle later */
+    }
+    header nav ul.active {
+        display: flex; /* Show when active */
+    }
+}
+
+@media (max-width: 768px) {
+    .md\:grid-cols-2 {
+        grid-template-columns: 1fr; /* Stack grid columns on even smaller screens */
+    }
+    .modal-content {
+        padding: 1.5rem; /* Reduce modal padding */
+    }
+    .modal-content h2 {
+        font-size: 2rem; /* Smaller modal titles */
+    }
 }
