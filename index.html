@@ -258,6 +258,7 @@
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Status</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Priority</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Assignee</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Role</th> <!-- NEW Role Header -->
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Due Date</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Progress</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Notes</th>
@@ -267,7 +268,7 @@
                             <tbody id="tasks-table-body" class="divide-y divide-gray-700">
                                 <!-- Task rows will be loaded here by JavaScript -->
                                 <tr class="bg-gray-800 bg-opacity-50">
-                                    <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-blue-400 text-center">No tasks added yet.</td>
+                                    <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-blue-400 text-center">No tasks added yet.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -277,7 +278,7 @@
                 <section id="project-budget-view" class="hidden project-section">
                     <h2 class="text-3xl font-semibold text-white mb-6 border-b border-blue-600 pb-3">Budget: <span id="current-project-name-budget"></span></h2>
                     <div class="bg-gray-700 bg-opacity-70 p-6 rounded-2xl shadow-lg mb-6 border border-blue-600">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div>
                                 <label for="total-budget" class="block text-blue-300 text-sm font-bold mb-2">Total Estimated Budget</label>
                                 <input type="number" id="total-budget" class="shadow appearance-none border border-gray-600 rounded-xl w-full py-3 px-4 bg-gray-800 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="0" placeholder="e.g., 50000">
@@ -285,6 +286,21 @@
                             <div>
                                 <label for="budget-spent" class="block text-blue-300 text-sm font-bold mb-2">Total Budget Spent</label>
                                 <input type="number" id="budget-spent" class="shadow appearance-none border border-gray-600 rounded-xl w-full py-3 px-4 bg-gray-800 text-white leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500" value="0" disabled>
+                            </div>
+                            <!-- NEW CURRENCY SELECTION -->
+                            <div>
+                                <label for="currency-symbol" class="block text-blue-300 text-sm font-bold mb-2">Currency</label>
+                                <select id="currency-symbol" class="shadow appearance-none border border-gray-600 rounded-xl w-full py-3 px-4 bg-gray-800 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="$">US Dollar ($)</option>
+                                    <option value="€">Euro (€)</option>
+                                    <option value="£">British Pound (£)</option>
+                                    <option value="¥">Japanese Yen (¥)</option>
+                                    <option value="₱">Philippine Peso (₱)</option>
+                                    <option value="₹">Indian Rupee (₹)</option>
+                                    <option value="C$">Canadian Dollar (C$)</option>
+                                    <option value="A$">Australian Dollar (A$)</option>
+                                    <!-- Add more currencies as needed -->
+                                </select>
                             </div>
                         </div>
                         <div class="relative pt-1">
@@ -305,18 +321,38 @@
                             </div>
                         </div>
 
-                        <h3 class="text-xl font-semibold text-white mb-4 border-b border-blue-600 pb-2">Budget Categories</h3>
+                        <h3 class="text-xl font-semibold text-white mb-4 border-b border-blue-600 pb-2">Budget Categories (Allocations)</h3>
                         <div id="budget-categories-container" class="space-y-4">
                             <!-- Budget categories will be loaded/added here by JavaScript -->
-                            <div class="flex items-center space-x-4">
-                                <input type="text" value="Development" disabled class="flex-1 shadow appearance-none border border-gray-600 rounded-xl py-3 px-4 bg-gray-800 text-blue-300 leading-tight">
-                                <input type="number" value="0" class="budget-category-amount shadow appearance-none border border-gray-600 rounded-xl w-32 py-3 px-4 bg-gray-800 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <button class="delete-budget-category-btn text-red-500 hover:text-red-700 transition-colors duration-200">
-                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
-                                </button>
-                            </div>
                         </div>
                         <button id="add-budget-category-btn" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200">Add Category</button>
+
+                        <!-- NEW: Budget Transactions Section -->
+                        <h3 class="text-xl font-semibold text-white mb-4 mt-8 border-b border-blue-600 pb-2">Transactions</h3>
+                        <button id="add-transaction-btn" class="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-6 py-3 rounded-xl shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 mb-6">
+                            Log New Transaction
+                        </button>
+
+                        <div class="overflow-x-auto bg-gray-700 bg-opacity-70 rounded-2xl shadow-lg border border-blue-600">
+                            <table class="min-w-full divide-y divide-gray-600">
+                                <thead class="bg-gray-600 bg-opacity-80">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider rounded-tl-xl">Description</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Category</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Amount</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Date</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider">Type</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-blue-300 uppercase tracking-wider rounded-tr-xl">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactions-table-body" class="divide-y divide-gray-700">
+                                    <!-- Transaction rows will be loaded here by JavaScript -->
+                                    <tr class="bg-gray-800 bg-opacity-50">
+                                        <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-blue-400 text-center">No transactions logged yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </section>
 
@@ -384,12 +420,18 @@
                         <h3 class="text-xl font-semibold text-white mb-3 border-b border-blue-600 pb-2">Feedback & Engagement</h3>
                         <div id="community-feedback-list" class="space-y-4">
                             <div class="bg-gray-800 p-4 rounded-xl border border-blue-700">
-                                <h4 class="text-lg font-semibold text-white">Bug Report: Character Glitch</h4>
-                                <p class="text-blue-400 text-sm">From: PlayerX | Status: New | Date: 2025-06-25</p>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-white">Bug Report: Character Glitch</h4>
+                                    <p class="text-blue-400 text-sm">From: PlayerX | Status: New | Date: 2025-06-25</p>
+                                </div>
+                                <button class="text-blue-400 hover:text-white"><i data-lucide="edit" class="w-5 h-5"></i></button>
                             </div>
                             <div class="bg-gray-800 p-4 rounded-xl border border-blue-700">
-                                <h4 class="text-lg font-semibold text-white">Feature Request: New Weapon Type</h4>
-                                <p class="text-blue-400 text-sm">From: GameFan | Status: Under Review | Date: 2025-06-20</p>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-white">Feature Request: New Weapon Type</h4>
+                                    <p class="text-blue-400 text-sm">From: GameFan | Status: Under Review | Date: 2025-06-20</p>
+                                </div>
+                                <button class="text-blue-400 hover:text-white"><i data-lucide="edit" class="w-5 h-5"></i></button>
                             </div>
                         </div>
                         <button id="add-community-item-btn" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200">Add Feedback/Topic</button>
@@ -444,7 +486,7 @@
         </div>
     </div>
 
-    <!-- Add Task Modal -->
+    <!-- Add/Edit Task Modal -->
     <div id="add-task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-gray-800 rounded-3xl shadow-2xl p-8 w-full max-w-2xl transform modal-enter-from" id="add-task-modal-content">
             <h2 class="text-3xl font-bold text-white mb-6 text-center">Add New Task</h2>
@@ -463,8 +505,8 @@
                         <select id="task-status" name="taskStatus" class="w-full px-5 py-3 bg-gray-700 border border-blue-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
                             <option value="To Do">To Do</option>
                             <option value="In Progress">In Progress</option>
-                            <option value="Blocked">Blocked</option>
-                            <option value="Done">Done</option>
+                            <option value="Reviewing">Reviewing</option> <!-- New -->
+                            <option value="Completed">Completed</option> <!-- Changed from Done -->
                         </select>
                     </div>
                     <div>
@@ -486,6 +528,18 @@
                         <label for="task-due-date" class="block text-blue-300 text-lg font-medium mb-2">Due Date</label>
                         <input type="date" id="task-due-date" name="taskDueDate" class="w-full px-5 py-3 bg-gray-700 border border-blue-600 rounded-xl text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
                     </div>
+                </div>
+                <!-- NEW ROLE FIELD -->
+                <div>
+                    <label for="task-role" class="block text-blue-300 text-lg font-medium mb-2">Role</label>
+                    <select id="task-role" name="taskRole" class="w-full px-5 py-3 bg-gray-700 border border-blue-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                        <option value="Programmer">Programmer</option>
+                        <option value="Builder">Builder</option>
+                        <option value="Modeler">Modeler</option>
+                        <option value="UI Designer">UI Designer</option>
+                        <option value="VFX Designer">VFX Designer</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
                 <div class="flex justify-end space-x-4 pt-4">
                     <button type="button" id="cancel-add-task" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 ease-in-out transform hover:scale-105 shadow-lg border border-blue-500">
@@ -518,6 +572,58 @@
                     </button>
                     <button type="submit" class="bg-gradient-to-r from-blue-600 to-cyan-700 hover:from-blue-700 hover:to-cyan-800 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg">
                         Send Invitation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- NEW: Transaction Modal -->
+    <div id="transaction-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-800 rounded-3xl shadow-2xl p-8 w-full max-w-2xl transform modal-enter-from" id="transaction-modal-content">
+            <h2 class="text-3xl font-bold text-white mb-6 text-center">Log New Transaction</h2>
+            <form id="transaction-form" class="space-y-6">
+                <div>
+                    <label for="transaction-description" class="block text-blue-300 text-lg font-medium mb-2">Description</label>
+                    <input type="text" id="transaction-description" name="transactionDescription" required class="w-full px-5 py-3 bg-gray-700 border border-blue-600 rounded-xl text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="transaction-amount" class="block text-blue-300 text-lg font-medium mb-2">Amount</label>
+                        <input type="number" id="transaction-amount" name="transactionAmount" required step="0.01" class="w-full px-5 py-3 bg-gray-700 border border-blue-600 rounded-xl text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                    </div>
+                    <div>
+                        <label for="transaction-date" class="block text-blue-300 text-lg font-medium mb-2">Date</label>
+                        <input type="date" id="transaction-date" name="transactionDate" required class="w-full px-5 py-3 bg-gray-700 border border-blue-600 rounded-xl text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                    </div>
+                </div>
+                <div>
+                    <label for="transaction-category" class="block text-blue-300 text-lg font-medium mb-2">Category</label>
+                    <select id="transaction-category" name="transactionCategory" class="w-full px-5 py-3 bg-gray-700 border border-blue-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                        <!-- Options will be dynamically populated by JavaScript -->
+                        <option value="">Select Category</option>
+                    </select>
+                </div>
+                <div>
+                    <span class="block text-blue-300 text-lg font-medium mb-2">Type</span>
+                    <div class="flex space-x-4">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="transactionType" id="transaction-type-expense" value="expense" class="form-radio text-blue-600 h-5 w-5">
+                            <span class="ml-2 text-white">Expense</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="transactionType" id="transaction-type-income" value="income" class="form-radio text-green-600 h-5 w-5">
+                            <span class="ml-2 text-white">Income</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4 pt-4">
+                    <button type="button" id="cancel-transaction" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 ease-in-out transform hover:scale-105 shadow-lg border border-blue-500">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-gradient-to-r from-blue-600 to-cyan-700 hover:from-blue-700 hover:to-cyan-800 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg">
+                        Save Transaction
                     </button>
                 </div>
             </form>
