@@ -226,7 +226,7 @@ const Dashboard = ({ onSelectProject }) => {
             src="https://placehold.co/200x150/374151/D1D5DB?text=No+Projects"
             alt="No Projects Placeholder"
             className="mx-auto rounded-lg"
-            onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/200x150/374151/D1D5DB?text=No+Projects" }}
+            onError={(e) => { e.target.onerror = null; e.target.src=`https://placehold.co/200x150/374151/D1D5DB?text=No+Projects` }}
           />
         </div>
       ) : (
@@ -252,7 +252,7 @@ const ProjectCard = ({ project, onSelectProject }) => {
         src={project.iconUrl || `https://placehold.co/100x100/1F2937/F3F4F6?text=${project.name.charAt(0)}`}
         alt={`${project.name} Icon`}
         className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-2 border-blue-400"
-        onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/100x100/1F2937/F3F4F6?text=${project.name.charAt(0)}` }}
+        onError={(e) => { e.target.onerror = null; e.target.src=`https://placehold.co/100x100/1F2937/F3F4F6?text=${project.name.charAt(0)}` }}
       />
       <h3 className="text-xl font-bold text-blue-400 text-center">{project.name}</h3>
       <p className="text-gray-400 text-sm text-center line-clamp-2">{project.description}</p>
