@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevHub - Game Project Manager</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase JS SDKs (CDN) -->
+    <script type="module">
+        // Global variables for Firebase config, replace with your actual values if needed outside Canvas
+        window.__app_id = 'your-canvas-app-id-here'; // Replace with your actual Canvas App ID or a unique string
+        // Replace with your actual Firebase config object
+        window.__firebase_config = JSON.stringify({
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        });
+        // Initial auth token is usually provided by Canvas; for a standalone app, anonymous sign-in is primary.
+        window.__initial_auth_token = null; // Set to null for standalone use, rely on anonymous auth
+
+        // Firebase SDK imports - ensure these versions are compatible and up-to-date
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Expose Firebase modules globally (or via window) so script.js can access them
+        // This is a workaround for not using a bundler and allows script.js to 'use' these imports
+        window.firebase = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, getDoc, updateDoc, arrayUnion };
+    </script>
+    <!-- Babel for in-browser JSX transpilation (Development Only) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-900 font-inter text-white">
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+
+    <!-- Your React app's JavaScript -->
+    <!-- Type "text/babel" tells Babel to transpile this script -->
+    <script type="text/babel" src="script.js"></script>
+</body>
+</html>
